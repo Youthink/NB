@@ -1,0 +1,9 @@
+{
+  "name": "NB",
+  "version": "1.0.0",
+  "description": "internet cafe timing system",
+  "main": "index.js",
+  "repository": "https://github.com/Youthink/NB.git",
+  "author": "Youthink <hufy3651@foxmail.com>",
+  "license": "MIT"
+}
