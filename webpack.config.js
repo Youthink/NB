@@ -1,9 +1,10 @@
 const path = require('path');
 
 module.exports = {
-entry: './app.js',
+entry: './src/app.js',
   output: {
-    filename: 'renderer.js'
+    filename: 'renderer.js',
+    path: path.resolve(__dirname, 'dist'),
   },
   module: {
     rules: [

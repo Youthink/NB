@@ -1,5 +1,6 @@
 import React    from 'react';
 import ReactDOM from 'react-dom';
+require('semantic-ui-css/semantic.min.css');
 
 class App extends React.PureComponent {
 
@@ -16,7 +17,14 @@ class App extends React.PureComponent {
 
   render() {
     return(
-      <h1>你好，世界</h1>
+      <div className="ui fixed blue inverted menu">
+        <a href="#" className="header item">
+          应用名称
+        </a>
+        <a href="#" className="ui right item">
+          设置
+        </a>
+      </div>
     );
   }
 }
