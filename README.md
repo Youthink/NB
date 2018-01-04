@@ -12,6 +12,11 @@
 
 # 开发
 
+首次安装依赖
+```
+ELECTRON_MIRROR=https://npm.taobao.org/mirrors/electron yarn install
+```
+
 安装依赖
 ```
 yarn install
