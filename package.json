@@ -4,7 +4,8 @@
   "description": "internet cafe timing system",
   "main": "main.js",
   "scripts": {
-    "start": "electron ."
+    "start": "electron .",
+    "build":"webpack --watch"
   },
   "repository": "https://github.com/Youthink/NB.git",
   "author": "Youthink <hufy3651@foxmail.com>",
