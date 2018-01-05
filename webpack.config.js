@@ -6,6 +6,7 @@ entry: './src/app.js',
   output: {
     filename: 'renderer.js',
     path: path.resolve(__dirname, 'dist'),
+    publicPath : 'dist/'
   },
   module: {
     rules: [
