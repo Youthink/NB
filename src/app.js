@@ -27,6 +27,7 @@ class App extends React.Component {
 
     this.state = {
       records: [],
+      remind: '',
       newComputerNumValue: '',
       newPriceValue: '',
       price: 3
@@ -34,7 +35,7 @@ class App extends React.Component {
   }
 
   render() {
-    const {records, price} = this.state;
+    const {records, price, remind} = this.state;
     return(
       <section className="home">
         <div className="ui fixed blue inverted menu">
@@ -76,7 +77,17 @@ class App extends React.Component {
                     <td>{o.price}元</td>
                     <td>{o.remainTime === 'end' ? '已到下机时间' : o.remainTime}</td>
                     <td>
-                      <button className="ui mini red labeled icon button">
+                      <button className="ui mini red labeled icon button"
+                        onClick={() => {
+                          $('.update-record')
+                          .modal('show');
+                          this.setState({
+                            updateComputerNum: o.computerNum,
+                            updatePrice: o.price,
+                            updateItem: i
+                          });
+                        }}
+                      >
                         <i className="write icon"></i>更新
                       </button>
                       <button className="ui mini blue labeled icon button"
@@ -104,20 +115,49 @@ class App extends React.Component {
           <i className="close icon"></i>
           <div className="ui center aligned grid header">添加上机记录</div>
           <div className="content">
-            <form className="ui form" onSubmit={::this.submitAddRecordFrom}>
+            <form className="ui form error" onSubmit={::this.submitAddRecordFrom}>
               <div className="field">
                 <label>机器编号</label>
                 <input type="number" name="computer-num" placeholder="请填写数字"
+                  value={this.state.newComputerNumValue}
                   onChange={(event) => {this.setState({newComputerNumValue :event.target.value})}}
+                />
+              </div>
+              {remind &&
+              <div className="ui error message">
+                <div className="header">{remind}</div>
+              </div>
+              }
+              <div className="field">
+                <label>金额</label>
+                <input type="number" name="price" placeholder="请填写数字"
+                  value={this.state.newPriceValue}
+                  onChange={(event) => {this.setState({newPriceValue: event.target.value})}}
+                />
+              </div>
+              <button className="fluid ui blue button" type="submit">添加</button>
+            </form>
+          </div>
+        </div>
+        <div className="ui modal update-record">
+          <i className="close icon"></i>
+          <div className="ui center aligned grid header">更新上机记录</div>
+          <div className="content">
+            <form className="ui form error" onSubmit={::this.submitUpdateRecordFrom}>
+              <div className="field">
+                <label>机器编号</label>
+                <input disabled type="number" name="computer-num" placeholder="请填写数字"
+                  value={this.state.updateComputerNum}
                 />
               </div>
               <div className="field">
                 <label>金额</label>
                 <input type="number" name="price" placeholder="请填写数字"
-                  onChange={(event) => {this.setState({newPriceValue: event.target.value})}}
+                  value={this.state.updatePrice}
+                  onChange={(event) => {this.setState({updatePrice: event.target.value})}}
                 />
               </div>
-              <button className="fluid ui blue button" type="submit">添加</button>
+              <button className="fluid ui blue button" type="submit">更新</button>
             </form>
           </div>
         </div>
@@ -141,13 +181,13 @@ class App extends React.Component {
             确认删除该记录？
           </div>
           <div className="actions" style={{textAlign: 'center'}}>
-            <div className="ui red ok button">
-              <i className="remove icon"></i>
-              删除
-            </div>
             <div className="ui green cancel button">
               <i className="checkmark icon"></i>
               不删除
+            </div>
+            <div className="ui red ok button">
+              <i className="remove icon"></i>
+              删除
             </div>
           </div>
         </div>
@@ -163,6 +203,7 @@ class App extends React.Component {
 
   componentWillUnmount() {
     interval.clear(this.monitor);
+    requestTimeout.clear(this.rt);
   }
 
   renderAddPopup() {
@@ -173,8 +214,26 @@ class App extends React.Component {
     $('.setting').modal('show');
   }
 
+  submitUpdateRecordFrom(event) {
+    event.preventDefault();
+    const {updateComputerNum, updatePrice, price, updateItem} = this.state;
+    const oldNow = db.get(`records[${updateItem}].nowTimestamp`).value();
+    const endTime = addHours(oldNow, Number((updatePrice / price).toFixed(1)));
+    db.get('records').find({computerNum: updateComputerNum}).assign({
+      price: updatePrice,
+      endTime: format(endTime,'MMMD[日] HH:mm',{locale: zh}),
+      endTimestamp: endTime,
+      remainTime: isPast(endTime) ? 'end' : distanceInWordsToNow(endTime, {locale: zh})
+    }).write();
+    this.fetchData();
+    $('.update-record').modal('hide');
+  }
+
   submitAddRecordFrom(event) {
     event.preventDefault();
+    if (!this.verify()) {
+      return;
+    }
     const {newComputerNumValue, newPriceValue, price} = this.state;
     const now = Date.now();
     const endTime = addHours(now, Number((newPriceValue / price).toFixed(1)));
@@ -184,10 +243,26 @@ class App extends React.Component {
       nowTime: format(now,'MMMD[日] HH:mm',{locale: zh}),
       endTime: format(endTime,'MMMD[日] HH:mm',{locale: zh}),
       endTimestamp: endTime,
+      nowTimestamp: now,
       remainTime: isPast(endTime) ? 'end' : distanceInWordsToNow(endTime, {locale: zh})
     }).write();
     this.fetchData();
+    this.setState({newComputerNumValue: '', newPriceValue: ''});
     $('.add-record').modal('hide');
+  }
+
+  verify() {
+    const {newComputerNumValue, records} = this.state;
+    const num = db.get('records').find({ computerNum: newComputerNumValue }).size().value();
+    if (num > 0) {
+      this.setState({remind: '该机器还未下机'});
+      setTimeout(() => {
+        this.setState({remind: ''});
+      }, 1500);
+      return false;
+    }
+    this.setState({remind: ''});
+    return true;
   }
 
   submitSettings(event) {
