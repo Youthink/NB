@@ -68,14 +68,14 @@ class App extends React.Component {
             <tbody>
               {records.map((o, i) => {
                 return(
-                 <tr className="negative" key={i}>
-                <td>{i + 1}</td>
-                <td>{o.computerNum}</td>
-                <td>{o.nowTime}</td>
-                <td>{o.endTime}</td>
-                <td>{o.price}元</td>
-                <td>{o.remainTime}</td>
-                <td>更新</td>
+                  <tr className={o.remainTime === 'end' ? 'negative' : ''} key={i}>
+                    <td>{i + 1}</td>
+                    <td>{o.computerNum}</td>
+                    <td>{o.nowTime}</td>
+                    <td>{o.endTime}</td>
+                    <td>{o.price}元</td>
+                    <td>{o.remainTime === 'end' ? '已到下机时间' : o.remainTime}</td>
+                    <td>更新</td>
                  </tr>
                 );
               })}
@@ -149,7 +149,7 @@ class App extends React.Component {
       nowTime: format(now,'MMMD[日] HH:mm',{locale: zh}),
       endTime: format(endTime,'MMMD[日] HH:mm',{locale: zh}),
       endTimestamp: endTime,
-      remainTime: distanceInWordsToNow(endTime, {locale: zh})
+      remainTime: isPast(endTime) ? 'end' : distanceInWordsToNow(endTime, {locale: zh})
     }).write();
     this.fetchData();
     $('.add-record').modal('hide');
@@ -179,11 +179,13 @@ class App extends React.Component {
   }
 
   monitorRecords(records) {
-    this.monitor = interval(3000, () => {
+    this.monitor = interval(60000, () => {
         records = records.map(o => {
           o.remainTime = distanceInWordsToNow(o.endTimestamp, {locale: zh});
-          if (isPast(o.endTime)) {
-            alert(`{o.computerNum}号机已到下机时间`);
+          if (isPast(o.endTimestamp)) {
+            o.remainTime = 'end';
+            db.get('records').find({ computerNum: o.computerNum }).assign({ remainTime: 'end'}).write();
+            alert(`${o.computerNum}号机已到下机时间`);
           }
           return o;
           });
