@@ -75,7 +75,25 @@ class App extends React.Component {
                     <td>{o.endTime}</td>
                     <td>{o.price}元</td>
                     <td>{o.remainTime === 'end' ? '已到下机时间' : o.remainTime}</td>
-                    <td>更新</td>
+                    <td>
+                      <button className="ui mini red labeled icon button">
+                        <i className="write icon"></i>更新
+                      </button>
+                      <button className="ui mini blue labeled icon button"
+                        onClick={() => {
+                        $('.delete-record')
+                        .modal({
+                          onApprove : () => {
+                            db.get('records').remove({computerNum: o.computerNum}).write();
+                            this.fetchData();
+                          }
+                        })
+                        .modal('show');
+                        }}
+                      >
+                        <i className="remove icon"></i>删除
+                      </button>
+                    </td>
                  </tr>
                 );
               })}
@@ -116,6 +134,21 @@ class App extends React.Component {
               </div>
               <button className="fluid ui blue button" type="submit">更新</button>
             </form>
+          </div>
+        </div>
+        <div className="ui mini modal delete-record">
+          <div className="ui icon header">
+            确认删除该记录？
+          </div>
+          <div className="actions" style={{textAlign: 'center'}}>
+            <div className="ui red ok button">
+              <i className="remove icon"></i>
+              删除
+            </div>
+            <div className="ui green cancel button">
+              <i className="checkmark icon"></i>
+              不删除
+            </div>
           </div>
         </div>
       </section>
