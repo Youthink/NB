@@ -1,24 +1,40 @@
-import React    from 'react';
-import ReactDOM from 'react-dom';
+import React                from 'react';
+import ReactDOM             from 'react-dom';
+import low                  from 'lowdb';
+import LocalStorage         from 'lowdb/adapters/LocalStorage';
+import format               from 'date-fns/format';
+import addHours             from 'date-fns/add_hours';
+import zh                   from 'date-fns/locale/zh_cn';
+import isPast               from 'date-fns/is_past';
+import distanceInWordsToNow from 'date-fns/distance_in_words_to_now';
+import interval             from 'request-interval';
+
 import 'semantic-ui-css/semantic.min.js';
 
 require('semantic-ui-css/semantic.min.css');
 require('./style.less');
 
-class App extends React.PureComponent {
+const adapter = new LocalStorage('db');
+const db = low(adapter);
+
+db.defaults({ records: [], settings: [] }).write();
+
+
+class App extends React.Component {
 
   constructor(props) {
     super(props);
 
     this.state = {
+      records: [],
+      newComputerNumValue: '',
+      newPriceValue: '',
+      price: 3
     }
   }
 
-  componentDidMount() {
-
-  }
-
   render() {
+    const {records, price} = this.state;
     return(
       <section className="home">
         <div className="ui fixed blue inverted menu">
@@ -44,78 +60,74 @@ class App extends React.PureComponent {
                 <th>机器编号</th>
                 <th>上机时间</th>
                 <th>下机时间</th>
-                <th>金额</th>
-                <th>倒计时</th>
+                <th>充值金额</th>
+                <th>剩余时间</th>
                 <th>操作</th>
               </tr>
             </thead>
             <tbody>
-              <tr className="negative">
-                <td>1</td>
-                <td>1</td>
-                <td>12月15日 12:32</td>
-                <td>12月15日 14:32</td>
-                <td>15元</td>
-                <td>00:01</td>
+              {records.map((o, i) => {
+                return(
+                 <tr className="negative" key={i}>
+                <td>{i + 1}</td>
+                <td>{o.computerNum}</td>
+                <td>{o.nowTime}</td>
+                <td>{o.endTime}</td>
+                <td>{o.price}元</td>
+                <td>{o.remainTime}</td>
                 <td>更新</td>
-              </tr>
-              <tr>
-                <td>2</td>
-                <td>2</td>
-                <td>12月15日 12:32</td>
-                <td>12月15日 14:32</td>
-                <td>15元</td>
-                <td>14:32</td>
-                <td>更新</td>
-              </tr>
-              <tr>
-                <td>3</td>
-                <td>3</td>
-                <td>12月15日 12:32</td>
-                <td>12月15日 14:32</td>
-                <td>15元</td>
-                <td>14:32:12</td>
-                <td>更新</td>
-              </tr>
+                 </tr>
+                );
+              })}
             </tbody>
           </table>
         </section>
         <div className="ui modal add-record">
-          <i class="close icon"></i>
+          <i className="close icon"></i>
           <div className="ui center aligned grid header">添加上机记录</div>
           <div className="content">
-            <div className="ui form">
+            <form className="ui form" onSubmit={::this.submitAddRecordFrom}>
               <div className="field">
                 <label>机器编号</label>
-                <input type="number" name="computer-num" placeholder="请填写数字" />
+                <input type="number" name="computer-num" placeholder="请填写数字"
+                  onChange={(event) => {this.setState({newComputerNumValue :event.target.value})}}
+                />
               </div>
               <div className="field">
                 <label>金额</label>
-                <input type="number" name="price" placeholder="请填写数字" />
+                <input type="number" name="price" placeholder="请填写数字"
+                  onChange={(event) => {this.setState({newPriceValue: event.target.value})}}
+                />
               </div>
               <button className="fluid ui blue button" type="submit">添加</button>
-            </div>
+            </form>
           </div>
         </div>
         <div className="ui modal setting">
-          <i class="close icon"></i>
+          <i className="close icon"></i>
           <div className="ui center aligned grid header">设置</div>
           <div className="content">
-            <div className="ui form">
+            <form className="ui form" onSubmit={::this.submitSettings}>
               <div className="field">
-                <label>机器编号</label>
-                <input type="number" name="computer-num" placeholder="请填写数字" />
+                <label>上机每小时价格</label>
+                <input type="number" name="price" value={price} placeholder="请填写数字" />
               </div>
-              <div className="field">
-                <label>金额</label>
-                <input type="number" name="price" placeholder="请填写数字" />
-              </div>
-              <button className="fluid ui blue button" type="submit">添加</button>
-            </div>
+              <button className="fluid ui blue button" type="submit">更新</button>
+            </form>
           </div>
         </div>
       </section>
     );
+  }
+
+  componentDidMount() {
+    const records = this.fetchData();
+    this.fetchSettings();
+    this.monitorRecords(records);
+  }
+
+  componentWillUnmount() {
+    interval.clear(this.monitor);
   }
 
   renderAddPopup() {
@@ -125,6 +137,60 @@ class App extends React.PureComponent {
   renderSettingPopup() {
     $('.setting').modal('show');
   }
+
+  submitAddRecordFrom(event) {
+    event.preventDefault();
+    const {newComputerNumValue, newPriceValue, price} = this.state;
+    const now = Date.now();
+    const endTime = addHours(now, Number((newPriceValue / price).toFixed(1)));
+    db.get('records').push({
+      computerNum: newComputerNumValue,
+      price: newPriceValue,
+      nowTime: format(now,'MMMD[日] HH:mm',{locale: zh}),
+      endTime: format(endTime,'MMMD[日] HH:mm',{locale: zh}),
+      endTimestamp: endTime,
+      remainTime: distanceInWordsToNow(endTime, {locale: zh})
+    }).write();
+    this.fetchData();
+    $('.add-record').modal('hide');
+  }
+
+  submitSettings(event) {
+    event.preventDefault();
+    const {price} = this.state;
+    db.get('settings').push({
+      price
+    }).write();
+    this.fetchSettings();
+    $('.setting').modal('hide');
+  }
+
+  fetchData() {
+    const data = db.getState()
+    const records = data && data.records;
+    this.setState({records});
+    return records;
+  }
+
+  fetchSettings() {
+    const data = db.getState()
+    const settings = data && data.settings;
+    this.setState({settings});
+  }
+
+  monitorRecords(records) {
+    this.monitor = interval(3000, () => {
+        records = records.map(o => {
+          o.remainTime = distanceInWordsToNow(o.endTimestamp, {locale: zh});
+          if (isPast(o.endTime)) {
+            alert(`{o.computerNum}号机已到下机时间`);
+          }
+          return o;
+          });
+        this.setState({records});
+    });
+  }
+
 }
 
 ReactDOM.render(<App />, document.getElementById('app'));
