@@ -42,7 +42,7 @@ class App extends React.Component {
             汲爽计时系统
           </a>
           <div className="right menu">
-            <a className="item" onClick={this.renderAddPopup}>
+            <a className="item" onClick={::this.renderAddPopup}>
               <i className="plus icon"></i>
               添加新记录
             </a>
@@ -110,7 +110,9 @@ class App extends React.Component {
             <form className="ui form" onSubmit={::this.submitSettings}>
               <div className="field">
                 <label>上机每小时价格</label>
-                <input type="number" name="price" value={price} placeholder="请填写数字" />
+                <input type="number" name="price" value={price} placeholder="请填写数字"
+                  onChange={(event) => {this.setState({price: event.target.value})}}
+                />
               </div>
               <button className="fluid ui blue button" type="submit">更新</button>
             </form>
@@ -179,18 +181,20 @@ class App extends React.Component {
   }
 
   monitorRecords(records) {
-    this.monitor = interval(60000, () => {
-        records = records.map(o => {
-          o.remainTime = distanceInWordsToNow(o.endTimestamp, {locale: zh});
-          if (isPast(o.endTimestamp)) {
-            o.remainTime = 'end';
-            db.get('records').find({ computerNum: o.computerNum }).assign({ remainTime: 'end'}).write();
-            alert(`${o.computerNum}号机已到下机时间`);
-          }
-          return o;
-          });
-        this.setState({records});
-    });
+    const interv = () => {
+      records = records.map(o => {
+        o.remainTime = distanceInWordsToNow(o.endTimestamp, {locale: zh});
+        if (isPast(o.endTimestamp)) {
+          o.remainTime = 'end';
+          db.get('records').find({ computerNum: o.computerNum }).assign({ remainTime: 'end'}).write();
+          //alert(`${o.computerNum}号机已到下机时间`);
+        }
+        return o;
+      });
+      this.setState({records});
+    }
+    interv();
+    this.monitor = interval(60000, interv);
   }
 
 }
