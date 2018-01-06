@@ -19,6 +19,7 @@ entry: './src/app.js',
             options: {
               babelrc: false,
               presets: ['env', 'react'],
+              plugins: ['transform-function-bind']
             }
           }
         ]
@@ -57,5 +58,8 @@ entry: './src/app.js',
       $: "jquery",
       jQuery: "jquery"
     })
-  ]
+  ],
+  node: {
+    fs: 'empty'
+  }
 };
