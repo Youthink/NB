@@ -23,7 +23,7 @@ class App extends React.PureComponent {
       <section className="home">
         <div className="ui fixed blue inverted menu">
           <a href="#" className="header item">
-            汲爽计时
+            汲爽计时系统
           </a>
           <div className="right menu">
             <a className="item" onClick={this.renderAddPopup}>
@@ -81,6 +81,7 @@ class App extends React.PureComponent {
           </table>
         </section>
         <div className="ui modal add-record">
+          <i class="close icon"></i>
           <div className="ui center aligned grid header">添加上机记录</div>
           <div className="content">
             <div className="ui form">
@@ -97,6 +98,7 @@ class App extends React.PureComponent {
           </div>
         </div>
         <div className="ui modal setting">
+          <i class="close icon"></i>
           <div className="ui center aligned grid header">设置</div>
           <div className="content">
             <div className="ui form">
