@@ -111,7 +111,7 @@ class App extends React.Component {
             </tbody>
           </table>
         </section>
-        <div className="ui modal add-record">
+        <div className="ui tiny modal add-record">
           <i className="close icon"></i>
           <div className="ui center aligned grid header">添加上机记录</div>
           <div className="content">
@@ -130,16 +130,19 @@ class App extends React.Component {
               }
               <div className="field">
                 <label>金额</label>
-                <input type="number" name="price" placeholder="请填写数字"
-                  value={this.state.newPriceValue}
-                  onChange={(event) => {this.setState({newPriceValue: event.target.value})}}
-                />
+                <div class="ui right labeled input">
+                  <input type="number" name="price" placeholder="请填写数字"
+                    value={this.state.newPriceValue}
+                    onChange={(event) => {this.setState({newPriceValue: event.target.value})}}
+                  />
+                  <div class="ui basic label">元</div>
+                </div>
               </div>
               <button className="fluid ui blue button" type="submit">添加</button>
             </form>
           </div>
         </div>
-        <div className="ui modal update-record">
+        <div className="ui tiny modal update-record">
           <i className="close icon"></i>
           <div className="ui center aligned grid header">更新上机记录</div>
           <div className="content">
@@ -152,25 +155,31 @@ class App extends React.Component {
               </div>
               <div className="field">
                 <label>金额</label>
-                <input type="number" name="price" placeholder="请填写数字"
-                  value={this.state.updatePrice}
-                  onChange={(event) => {this.setState({updatePrice: event.target.value})}}
-                />
+                <div class="ui right labeled input">
+                  <input type="number" name="price" placeholder="请填写数字"
+                    value={this.state.updatePrice}
+                    onChange={(event) => {this.setState({updatePrice: event.target.value})}}
+                  />
+                  <div class="ui basic label">元</div>
+                </div>
               </div>
               <button className="fluid ui blue button" type="submit">更新</button>
             </form>
           </div>
         </div>
-        <div className="ui modal setting">
+        <div className="ui tiny modal setting">
           <i className="close icon"></i>
           <div className="ui center aligned grid header">设置</div>
           <div className="content">
             <form className="ui form" onSubmit={::this.submitSettings}>
               <div className="field">
                 <label>上机每小时价格</label>
-                <input type="number" name="price" value={price} placeholder="请填写数字"
-                  onChange={(event) => {this.setState({price: event.target.value})}}
-                />
+                <div class="ui right labeled input">
+                  <input type="number" name="price" value={price} placeholder="请填写数字"
+                    onChange={(event) => {this.setState({price: event.target.value})}}
+                  />
+                  <div class="ui basic label">元</div>
+                </div>
               </div>
               <button className="fluid ui blue button" type="submit">更新</button>
             </form>
