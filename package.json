@@ -5,7 +5,9 @@
   "main": "index.js",
   "scripts": {
     "start": "electron .",
-    "build": "webpack --watch"
+    "build": "webpack --watch",
+    "package-mac": "electron-packager . --overwrite --platform=darwin --arch=x64 --prune=true --out=release-builds",
+    "package-win": "electron-packager . --overwrite --asar=true --platform=win32 --arch=ia32 --prune=true --out=release-builds"
   },
   "repository": "https://github.com/Youthink/NB.git",
   "author": "Youthink <hufy3651@foxmail.com>",
@@ -18,7 +20,7 @@
     "babel-preset-react": "^6.24.1",
     "css-loader": "^0.28.7",
     "electron": "^1.7.10",
-    "electron-reload": "^1.2.2",
+    "electron-packager": "^10.1.1",
     "file-loader": "^1.1.6",
     "less": "^2.7.3",
     "less-loader": "^4.0.5",
@@ -27,6 +29,7 @@
   },
   "dependencies": {
     "date-fns": "^1.29.0",
+    "electron-reload": "^1.2.2",
     "lowdb": "^1.0.0",
     "react": "^16.2.0",
     "react-dom": "^16.2.0",
