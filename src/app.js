@@ -62,6 +62,7 @@ class App extends React.Component {
                 <th>上机时间</th>
                 <th>下机时间</th>
                 <th>充值金额</th>
+                <th>单价</th>
                 <th>剩余时间</th>
                 <th>剩余金额</th>
                 <th>操作</th>
@@ -76,6 +77,7 @@ class App extends React.Component {
                     <td>{o.nowTime}</td>
                     <td>{o.endTime}</td>
                     <td>{o.amount}元</td>
+                    <td>{o.price}元/小时</td>
                     <td>{o.remainTime === 'end' ? '已到下机时间' : o.remainTime}</td>
                     <td>{o.balance}元</td>
                     <td>
@@ -251,6 +253,7 @@ class App extends React.Component {
     db.get('records').push({
       computerNum: newComputerNumValue,
       amount: newAmountValue,
+      price: price,
       nowTime: format(now,'MMMD[日] HH:mm',{locale: zh}),
       endTime: format(endTime,'MMMD[日] HH:mm',{locale: zh}),
       endTimestamp: endTime,
@@ -297,7 +300,7 @@ class App extends React.Component {
   fetchSettings() {
     const data = db.getState()
     const settings = data && data.settings;
-    this.setState({settings});
+    this.setState({price: settings.price || 3});
     return settings;
   }
 
