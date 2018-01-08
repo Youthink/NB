@@ -29,7 +29,7 @@ class App extends React.Component {
       records: [],
       remind: '',
       newComputerNumValue: '',
-      newPriceValue: '',
+      newAmountValue: '',
       price: 3
     }
   }
@@ -63,6 +63,7 @@ class App extends React.Component {
                 <th>下机时间</th>
                 <th>充值金额</th>
                 <th>剩余时间</th>
+                <th>剩余金额</th>
                 <th>操作</th>
               </tr>
             </thead>
@@ -74,8 +75,9 @@ class App extends React.Component {
                     <td>{o.computerNum}</td>
                     <td>{o.nowTime}</td>
                     <td>{o.endTime}</td>
-                    <td>{o.price}元</td>
+                    <td>{o.amount}元</td>
                     <td>{o.remainTime === 'end' ? '已到下机时间' : o.remainTime}</td>
+                    <td>{o.balance}元</td>
                     <td>
                       <button className="ui mini red labeled icon button"
                         onClick={() => {
@@ -83,7 +85,7 @@ class App extends React.Component {
                           .modal('show');
                           this.setState({
                             updateComputerNum: o.computerNum,
-                            updatePrice: o.price,
+                            updateAmount: o.amount,
                             updateItem: i
                           });
                         }}
@@ -118,7 +120,7 @@ class App extends React.Component {
             <form className="ui form error" onSubmit={::this.submitAddRecordFrom}>
               <div className="field">
                 <label>机器编号</label>
-                <input type="number" name="computer-num" placeholder="请填写数字"
+                <input type="number" placeholder="请填写数字"
                   value={this.state.newComputerNumValue}
                   onChange={(event) => {this.setState({newComputerNumValue :event.target.value})}}
                 />
@@ -131,9 +133,9 @@ class App extends React.Component {
               <div className="field">
                 <label>金额</label>
                 <div class="ui right labeled input">
-                  <input type="number" name="price" placeholder="请填写数字"
-                    value={this.state.newPriceValue}
-                    onChange={(event) => {this.setState({newPriceValue: event.target.value})}}
+                  <input type="number" placeholder="请填写数字"
+                    value={this.state.newAmountValue}
+                    onChange={(event) => {this.setState({newAmountValue: event.target.value})}}
                   />
                   <div class="ui basic label">元</div>
                 </div>
@@ -149,16 +151,16 @@ class App extends React.Component {
             <form className="ui form error" onSubmit={::this.submitUpdateRecordFrom}>
               <div className="field">
                 <label>机器编号</label>
-                <input disabled type="number" name="computer-num" placeholder="请填写数字"
+                <input disabled type="number" placeholder="请填写数字"
                   value={this.state.updateComputerNum}
                 />
               </div>
               <div className="field">
                 <label>金额</label>
                 <div class="ui right labeled input">
-                  <input type="number" name="price" placeholder="请填写数字"
-                    value={this.state.updatePrice}
-                    onChange={(event) => {this.setState({updatePrice: event.target.value})}}
+                  <input type="number" placeholder="请填写数字"
+                    value={this.state.updateAmount}
+                    onChange={(event) => {this.setState({updateAmount: event.target.value})}}
                   />
                   <div class="ui basic label">元</div>
                 </div>
@@ -175,7 +177,7 @@ class App extends React.Component {
               <div className="field">
                 <label>上机每小时价格</label>
                 <div class="ui right labeled input">
-                  <input type="number" name="price" value={price} placeholder="请填写数字"
+                  <input type="number" value={price} placeholder="请填写数字"
                     onChange={(event) => {this.setState({price: event.target.value})}}
                   />
                   <div class="ui basic label">元</div>
@@ -206,8 +208,8 @@ class App extends React.Component {
 
   componentDidMount() {
     const records = this.fetchData();
-    this.fetchSettings();
-    this.monitorRecords(records);
+    const settings = this.fetchSettings();
+    this.monitorRecords(records, settings);
   }
 
   componentWillUnmount() {
@@ -225,11 +227,11 @@ class App extends React.Component {
 
   submitUpdateRecordFrom(event) {
     event.preventDefault();
-    const {updateComputerNum, updatePrice, price, updateItem} = this.state;
+    const {updateComputerNum, updateAmount, price, updateItem} = this.state;
     const oldNow = db.get(`records[${updateItem}].nowTimestamp`).value();
-    const endTime = addHours(oldNow, Number((updatePrice / price).toFixed(1)));
+    const endTime = addHours(oldNow, Number((updateAmount / price).toFixed(1)));
     db.get('records').find({computerNum: updateComputerNum}).assign({
-      price: updatePrice,
+      amount: updateAmount,
       endTime: format(endTime,'MMMD[日] HH:mm',{locale: zh}),
       endTimestamp: endTime,
       remainTime: isPast(endTime) ? 'end' : distanceInWordsToNow(endTime, {locale: zh})
@@ -243,20 +245,21 @@ class App extends React.Component {
     if (!this.verify()) {
       return;
     }
-    const {newComputerNumValue, newPriceValue, price} = this.state;
+    const {newComputerNumValue, newAmountValue, price} = this.state;
     const now = Date.now();
-    const endTime = addHours(now, Number((newPriceValue / price).toFixed(1)));
+    const endTime = addHours(now, Number((newAmountValue / price).toFixed(1)));
     db.get('records').push({
       computerNum: newComputerNumValue,
-      price: newPriceValue,
+      amount: newAmountValue,
       nowTime: format(now,'MMMD[日] HH:mm',{locale: zh}),
       endTime: format(endTime,'MMMD[日] HH:mm',{locale: zh}),
       endTimestamp: endTime,
       nowTimestamp: now,
-      remainTime: isPast(endTime) ? 'end' : distanceInWordsToNow(endTime, {locale: zh})
+      remainTime: isPast(endTime) ? 'end' : distanceInWordsToNow(endTime, {locale: zh}),
+      balance: newAmountValue
     }).write();
     this.fetchData();
-    this.setState({newComputerNumValue: '', newPriceValue: ''});
+    this.setState({newComputerNumValue: '', newAmountValue: ''});
     $('.add-record').modal('hide');
   }
 
@@ -295,14 +298,18 @@ class App extends React.Component {
     const data = db.getState()
     const settings = data && data.settings;
     this.setState({settings});
+    return settings;
   }
 
-  monitorRecords(records) {
+  monitorRecords(records, settings) {
+    const price = settings && settings.price
     const interv = () => {
       records = records.map(o => {
         o.remainTime = distanceInWordsToNow(o.endTimestamp, {locale: zh});
+        //o.balance = o.price - 距离现在的小时数 * this.state.price;
         if (isPast(o.endTimestamp)) {
           o.remainTime = 'end';
+          o.balance = 0;
           db.get('records').find({ computerNum: o.computerNum }).assign({ remainTime: 'end'}).write();
           //alert(`${o.computerNum}号机已到下机时间`);
         }
