@@ -17,7 +17,14 @@ require('./style.less');
 const adapter = new LocalStorage('db');
 const db = low(adapter);
 
-db.defaults({ records: [], settings: [] }).write();
+db.defaults(
+    {
+      records: [],
+      settings: {
+        price: 3
+      }
+    }
+  ).write();
 
 
 class App extends React.Component {
@@ -30,12 +37,12 @@ class App extends React.Component {
       remind: '',
       newComputerNumValue: '',
       newAmountValue: '',
-      price: 3
+      settings: {}
     }
   }
 
   render() {
-    const {records, price, remind} = this.state;
+    const {records, settings, remind} = this.state;
     return(
       <section className="home">
         <div className="ui fixed blue inverted menu">
@@ -134,12 +141,12 @@ class App extends React.Component {
               }
               <div className="field">
                 <label>金额</label>
-                <div class="ui right labeled input">
+                <div className="ui right labeled input">
                   <input type="number" placeholder="请填写数字"
                     value={this.state.newAmountValue}
                     onChange={(event) => {this.setState({newAmountValue: event.target.value})}}
                   />
-                  <div class="ui basic label">元</div>
+                  <div className="ui basic label">元</div>
                 </div>
               </div>
               <button className="fluid ui blue button" type="submit">添加</button>
@@ -159,12 +166,12 @@ class App extends React.Component {
               </div>
               <div className="field">
                 <label>金额</label>
-                <div class="ui right labeled input">
+                <div className="ui right labeled input">
                   <input type="number" placeholder="请填写数字"
                     value={this.state.updateAmount}
                     onChange={(event) => {this.setState({updateAmount: event.target.value})}}
                   />
-                  <div class="ui basic label">元</div>
+                  <div className="ui basic label">元</div>
                 </div>
               </div>
               <button className="fluid ui blue button" type="submit">更新</button>
@@ -178,11 +185,14 @@ class App extends React.Component {
             <form className="ui form" onSubmit={::this.submitSettings}>
               <div className="field">
                 <label>上机每小时价格</label>
-                <div class="ui right labeled input">
-                  <input type="number" value={price} placeholder="请填写数字"
-                    onChange={(event) => {this.setState({price: event.target.value})}}
+                <div className="ui right labeled input">
+                  <input type="number" value={settings.price} placeholder="请填写数字"
+                    onChange={(event) => {
+                      const settings = {price: event.target.value};
+                      this.setState({settings});
+                    }}
                   />
-                  <div class="ui basic label">元</div>
+                  <div className="ui basic label">元</div>
                 </div>
               </div>
               <button className="fluid ui blue button" type="submit">更新</button>
@@ -229,9 +239,9 @@ class App extends React.Component {
 
   submitUpdateRecordFrom(event) {
     event.preventDefault();
-    const {updateComputerNum, updateAmount, price, updateItem} = this.state;
+    const {updateComputerNum, updateAmount, settings, updateItem} = this.state;
     const oldNow = db.get(`records[${updateItem}].nowTimestamp`).value();
-    const endTime = addHours(oldNow, Number((updateAmount / price).toFixed(1)));
+    const endTime = addHours(oldNow, Number((updateAmount / settings.price).toFixed(1)));
     db.get('records').find({computerNum: updateComputerNum}).assign({
       amount: updateAmount,
       endTime: format(endTime,'MMMD[日] HH:mm',{locale: zh}),
@@ -247,13 +257,13 @@ class App extends React.Component {
     if (!this.verify()) {
       return;
     }
-    const {newComputerNumValue, newAmountValue, price} = this.state;
+    const {newComputerNumValue, newAmountValue, settings} = this.state;
     const now = Date.now();
-    const endTime = addHours(now, Number((newAmountValue / price).toFixed(1)));
+    const endTime = addHours(now, Number((newAmountValue / settings.price).toFixed(1)));
     db.get('records').push({
       computerNum: newComputerNumValue,
       amount: newAmountValue,
-      price: price,
+      price: settings.price,
       nowTime: format(now,'MMMD[日] HH:mm',{locale: zh}),
       endTime: format(endTime,'MMMD[日] HH:mm',{locale: zh}),
       endTimestamp: endTime,
@@ -282,10 +292,8 @@ class App extends React.Component {
 
   submitSettings(event) {
     event.preventDefault();
-    const {price} = this.state;
-    db.get('settings').push({
-      price
-    }).write();
+    const price = this.state.settings.price;
+    db.get('settings').assign({price}).write();
     this.fetchSettings();
     $('.setting').modal('hide');
   }
@@ -300,7 +308,7 @@ class App extends React.Component {
   fetchSettings() {
     const data = db.getState()
     const settings = data && data.settings;
-    this.setState({price: settings.price || 3});
+    this.setState({settings});
     return settings;
   }
 
