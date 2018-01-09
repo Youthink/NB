@@ -7,6 +7,7 @@ import addHours             from 'date-fns/add_hours';
 import zh                   from 'date-fns/locale/zh_cn';
 import isPast               from 'date-fns/is_past';
 import distanceInWordsToNow from 'date-fns/distance_in_words_to_now';
+import differenceInMinutes  from 'date-fns/difference_in_minutes';
 import interval             from 'request-interval';
 
 import 'semantic-ui-css/semantic.min.js';
@@ -241,12 +242,15 @@ class App extends React.Component {
     event.preventDefault();
     const {updateComputerNum, updateAmount, settings, updateItem} = this.state;
     const oldNow = db.get(`records[${updateItem}].nowTimestamp`).value();
-    const endTime = addHours(oldNow, Number((updateAmount / settings.price).toFixed(1)));
+    const oldAmount = db.get(`records[${updateItem}].amount`).value();
+    const amount = Number(oldAmount) + Number(updateAmount);
+    const endTime = addHours(oldNow, Number((amount / settings.price).toFixed(1)));
     db.get('records').find({computerNum: updateComputerNum}).assign({
-      amount: updateAmount,
+      amount: amount,
       endTime: format(endTime,'MMMD[日] HH:mm',{locale: zh}),
       endTimestamp: endTime,
-      remainTime: isPast(endTime) ? 'end' : distanceInWordsToNow(endTime, {locale: zh})
+      remainTime: isPast(endTime) ? 'end' : distanceInWordsToNow(endTime, {locale: zh}),
+      balance: Number(((Math.abs(differenceInMinutes(endTime, Date.now())) / 60) * settings.price).toFixed(1))
     }).write();
     this.fetchData();
     $('.update-record').modal('hide');
@@ -262,8 +266,8 @@ class App extends React.Component {
     const endTime = addHours(now, Number((newAmountValue / settings.price).toFixed(1)));
     db.get('records').push({
       computerNum: newComputerNumValue,
-      amount: newAmountValue,
-      price: settings.price,
+      amount: Number(newAmountValue),
+      price: Number(settings.price),
       nowTime: format(now,'MMMD[日] HH:mm',{locale: zh}),
       endTime: format(endTime,'MMMD[日] HH:mm',{locale: zh}),
       endTimestamp: endTime,
@@ -292,7 +296,7 @@ class App extends React.Component {
 
   submitSettings(event) {
     event.preventDefault();
-    const price = this.state.settings.price;
+    const price = Number(this.state.settings.price);
     db.get('settings').assign({price}).write();
     this.fetchSettings();
     $('.setting').modal('hide');
@@ -317,7 +321,7 @@ class App extends React.Component {
     const interv = () => {
       records = records.map(o => {
         o.remainTime = distanceInWordsToNow(o.endTimestamp, {locale: zh});
-        //o.balance = o.price - 距离现在的小时数 * this.state.price;
+        o.balance = Number(((Math.abs(differenceInMinutes(o.endTimestamp, Date.now())) / 60) * price).toFixed(1));
         if (isPast(o.endTimestamp)) {
           o.remainTime = 'end';
           o.balance = 0;
