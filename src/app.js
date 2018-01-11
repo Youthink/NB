@@ -161,15 +161,21 @@ class App extends React.Component {
             <form className="ui form error" onSubmit={::this.submitUpdateRecordFrom}>
               <div className="field">
                 <label>机器编号</label>
-                <input disabled type="number" placeholder="请填写数字"
-                  value={this.state.updateComputerNum}
-                />
+                <div className="ui segment">
+                  {this.state.updateComputerNum}
+                </div>
+              </div>
+               <div className="field">
+                <label>目前的金额</label>
+                <div className="ui segment">
+                  {this.state.updateAmount}
+                </div>
               </div>
               <div className="field">
-                <label>金额</label>
+                <label>添加或减少的金额</label>
                 <div className="ui right labeled input">
-                  <input type="number" placeholder="请填写数字"
-                    value={this.state.updateAmount}
+                  <input type="number" placeholder="请填写数字例如：5  或者 -5"
+                    defaultValue="0"
                     onChange={(event) => {this.setState({updateAmount: event.target.value})}}
                   />
                   <div className="ui basic label">元</div>
