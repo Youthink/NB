@@ -260,7 +260,7 @@ class App extends React.Component {
       amount: amount,
       endTime: format(endTime,'MMMD[日] HH:mm',{locale: zh}),
       endTimestamp: endTime,
-      remainTime: isPast(endTime) ? 'end' : distanceInWordsToNow(endTime, {locale: zh}),
+      remainTime: isPast(endTime) ? 'end' :  this.remainTime(endTime),
       balance: Number(((Math.abs(differenceInMinutes(endTime, Date.now())) / 60) * settings.price).toFixed(1))
     }).write();
     this.fetchData();
@@ -283,7 +283,7 @@ class App extends React.Component {
       endTime: format(endTime,'MMMD[日] HH:mm',{locale: zh}),
       endTimestamp: endTime,
       nowTimestamp: now,
-      remainTime: isPast(endTime) ? 'end' : distanceInWordsToNow(endTime, {locale: zh}),
+      remainTime: isPast(endTime) ? 'end' :  this.remainTime(endTime),
       balance: Number(newAmountValue) - 1
     }).write();
     this.fetchData();
@@ -335,7 +335,7 @@ class App extends React.Component {
     const price = settings && settings.price
     const interv = () => {
       records = records.map(o => {
-        o.remainTime = distanceInWordsToNow(o.endTimestamp, {locale: zh});
+        o.remainTime = this.remainTime(o.endTimestamp);
         o.balance = Number(((Math.abs(differenceInMinutes(o.endTimestamp, Date.now())) / 60) * price).toFixed(1));
         if (isPast(o.endTimestamp)) {
           o.remainTime = 'end';
@@ -349,6 +349,16 @@ class App extends React.Component {
     }
     interv();
     this.monitor = interval(60000, interv);
+  }
+
+  remainTime(endTimestamp) {
+    const minutes = differenceInMinutes(endTimestamp, Date.now());
+    const h = Math.floor(minutes / 60);
+    const m = minutes - h * 60;
+    if (h > 0) {
+      return h + '小时' + m + '分钟';
+    }
+    return m + '分钟';
   }
 
 }
