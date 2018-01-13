@@ -287,7 +287,11 @@ class App extends React.Component {
   }
 
   verify() {
-    const {newComputerNumValue, records} = this.state;
+    const {newComputerNumValue, newAmountValue, records} = this.state;
+    if (!newComputerNumValue || !newAmountValue) {
+      this.setState({remind: '要填写完才能添加偶~'});
+      return false;
+    }
     const num = db.get('records').find({ computerNum: newComputerNumValue }).size().value();
     if (num > 0) {
       this.setState({remind: '该机器还未下机'});
