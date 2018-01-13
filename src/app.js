@@ -48,12 +48,12 @@ class App extends React.Component {
       <section className="home">
         <div className="ui fixed blue inverted menu">
           <a href="#" className="header item">
-            汲爽计时系统
+            汲爽网咖计时系统
           </a>
           <div className="right menu">
             <a className="item" onClick={::this.renderAddPopup}>
               <i className="plus icon"></i>
-              添加新记录
+              上机
             </a>
             <a className="item" onClick={this.renderSettingPopup}>
               <i className="setting icon"></i>
@@ -62,10 +62,17 @@ class App extends React.Component {
           </div>
         </div>
         <section className="ui container main">
+          <div class="ui labeled button" tabindex="0">
+            <div class="ui blue button">
+              <i class="user icon"></i> 目前上机人数
+            </div>
+            <a class="ui basic blue left pointing label">
+              {records.length}
+            </a>
+          </div>
           <table className="ui celled blue table">
             <thead>
               <tr>
-                <th>序号</th>
                 <th>机器编号</th>
                 <th>上机时间</th>
                 <th>下机时间</th>
@@ -80,7 +87,6 @@ class App extends React.Component {
               {records.map((o, i) => {
                 return(
                   <tr className={o.remainTime === 'end' ? 'negative' : ''} key={i}>
-                    <td>{i + 1}</td>
                     <td>{o.computerNum}</td>
                     <td>{o.nowTime}</td>
                     <td>{o.endTime}</td>
@@ -130,7 +136,7 @@ class App extends React.Component {
             <form className="ui form error" onSubmit={::this.submitAddRecordFrom}>
               <div className="field">
                 <label>机器编号</label>
-                <input type="number" placeholder="请填写数字"
+                <input type="number" placeholder="填写机器编号" min="0"
                   value={this.state.newComputerNumValue}
                   onChange={(event) => {this.setState({newComputerNumValue :event.target.value})}}
                 />
@@ -143,7 +149,7 @@ class App extends React.Component {
               <div className="field">
                 <label>金额</label>
                 <div className="ui right labeled input">
-                  <input type="number" placeholder="请填写数字"
+                  <input type="number" placeholder="请填写数字" min="0" step="0.1"
                     value={this.state.newAmountValue}
                     onChange={(event) => {this.setState({newAmountValue: event.target.value})}}
                   />
@@ -174,8 +180,7 @@ class App extends React.Component {
               <div className="field">
                 <label>添加或减少的金额</label>
                 <div className="ui right labeled input">
-                  <input type="number" placeholder="请填写数字例如：5  或者 -5"
-                    step="0.1"
+                  <input type="number" placeholder="请填写数字例如：5  或者 -5" step="0.1"
                     onChange={(event) => {this.setState({updateAmount: event.target.value})}}
                   />
                   <div className="ui basic label">元</div>
@@ -193,7 +198,7 @@ class App extends React.Component {
               <div className="field">
                 <label>上机每小时价格</label>
                 <div className="ui right labeled input">
-                  <input type="number" value={settings.price} placeholder="请填写数字"
+                  <input type="number" value={settings.price} placeholder="请填写数字" min="0" step="0.1"
                     onChange={(event) => {
                       const settings = {price: event.target.value};
                       this.setState({settings});
@@ -279,7 +284,7 @@ class App extends React.Component {
       endTimestamp: endTime,
       nowTimestamp: now,
       remainTime: isPast(endTime) ? 'end' : distanceInWordsToNow(endTime, {locale: zh}),
-      balance: newAmountValue
+      balance: Number(newAmountValue) - 1
     }).write();
     this.fetchData();
     this.setState({newComputerNumValue: '', newAmountValue: ''});
