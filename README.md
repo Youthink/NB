@@ -14,20 +14,20 @@
 
 首次安装依赖
 ```
-ELECTRON_MIRROR=https://npm.taobao.org/mirrors/electron yarn install
+ELECTRON_MIRROR=https://npm.taobao.org/mirrors/electron npm install
 ```
 
 安装依赖
 ```
-yarn install
+npm install
 ```
 
 webpack 打包监听文件改动
 ```
-yarn build
+npm run build
 ```
 
 启动应用
 ```
-yarn start
+npm start
 ```
