@@ -230,9 +230,9 @@ class App extends React.Component {
   }
 
   componentDidMount() {
-    const records = this.fetchData();
-    const settings = this.fetchSettings();
-    this.monitorRecords(records, settings);
+    this.fetchData();
+    this.fetchSettings();
+    this.monitorRecords();
   }
 
   componentWillUnmount() {
@@ -321,19 +321,19 @@ class App extends React.Component {
     const data = db.getState()
     const records = data && data.records;
     this.setState({records});
-    return records;
   }
 
   fetchSettings() {
     const data = db.getState()
     const settings = data && data.settings;
     this.setState({settings});
-    return settings;
   }
 
-  monitorRecords(records, settings) {
-    const price = settings && settings.price
+  monitorRecords() {
     const interv = () => {
+      let {records} = db.getState();
+      const {settings} = db.getState();
+      const price = settings.price;
       records = records.map(o => {
         o.remainTime = this.remainTime(o.endTimestamp);
         o.balance = this.balance(o.endTimestamp, price);
