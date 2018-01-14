@@ -6,7 +6,6 @@ import format               from 'date-fns/format';
 import addHours             from 'date-fns/add_hours';
 import zh                   from 'date-fns/locale/zh_cn';
 import isPast               from 'date-fns/is_past';
-import distanceInWordsToNow from 'date-fns/distance_in_words_to_now';
 import differenceInMinutes  from 'date-fns/difference_in_minutes';
 import interval             from 'request-interval';
 
@@ -62,11 +61,11 @@ class App extends React.Component {
           </div>
         </div>
         <section className="ui container main">
-          <div class="ui labeled button" tabindex="0">
-            <div class="ui blue button">
-              <i class="user icon"></i> 目前上机人数
+          <div className="ui labeled button">
+            <div className="ui blue button">
+              <i className="user icon"></i> 目前上机人数
             </div>
-            <a class="ui basic blue left pointing label">
+            <a className="ui basic blue left pointing label">
               {records.length}
             </a>
           </div>
@@ -88,7 +87,7 @@ class App extends React.Component {
                 return(
                   <tr className={o.remainTime === 'end' ? 'negative' : ''} key={i}>
                     <td>{o.computerNum}</td>
-                    <td>{o.nowTime}</td>
+                    <td>{o.startTime}</td>
                     <td>{o.endTime}</td>
                     <td>{o.amount}元</td>
                     <td>{o.price}元/小时</td>
@@ -252,16 +251,17 @@ class App extends React.Component {
   submitUpdateRecordFrom(event) {
     event.preventDefault();
     const {updateComputerNum, updateAmount, settings, updateItem} = this.state;
-    const oldNow = db.get(`records[${updateItem}].nowTimestamp`).value();
+    const oldStartTime = db.get(`records[${updateItem}].startTimestamp`).value();
     const oldAmount = db.get(`records[${updateItem}].amount`).value();
+    const balance = db.get(`records[${updateItem}].balance`).value() +  Number(updateAmount);
     const amount = Number(oldAmount) + Number(updateAmount);
-    const endTime = addHours(oldNow, Number((amount / settings.price).toFixed(1)));
+    const endTime = addHours(oldStartTime, Number((amount / settings.price).toFixed(1)));
     db.get('records').find({computerNum: updateComputerNum}).assign({
       amount: amount,
       endTime: format(endTime,'MMMD[日] HH:mm',{locale: zh}),
       endTimestamp: endTime,
       remainTime: isPast(endTime) ? 'end' :  this.remainTime(endTime),
-      balance: Number(((Math.abs(differenceInMinutes(endTime, Date.now())) / 60) * settings.price).toFixed(1))
+      balance: this.balance(endTime, settings.price)
     }).write();
     this.fetchData();
     $('.update-record').modal('hide');
@@ -279,12 +279,12 @@ class App extends React.Component {
       computerNum: newComputerNumValue,
       amount: Number(newAmountValue),
       price: Number(settings.price),
-      nowTime: format(now,'MMMD[日] HH:mm',{locale: zh}),
+      startTime: format(now,'MMMD[日] HH:mm',{locale: zh}),
       endTime: format(endTime,'MMMD[日] HH:mm',{locale: zh}),
       endTimestamp: endTime,
-      nowTimestamp: now,
+      startTimestamp: now,
       remainTime: isPast(endTime) ? 'end' :  this.remainTime(endTime),
-      balance: Number(newAmountValue) - 1
+      balance: this.balance(endTime, settings.price)
     }).write();
     this.fetchData();
     this.setState({newComputerNumValue: '', newAmountValue: ''});
@@ -336,7 +336,7 @@ class App extends React.Component {
     const interv = () => {
       records = records.map(o => {
         o.remainTime = this.remainTime(o.endTimestamp);
-        o.balance = Number(((Math.abs(differenceInMinutes(o.endTimestamp, Date.now())) / 60) * price).toFixed(1));
+        o.balance = this.balance(o.endTimestamp, price);
         if (isPast(o.endTimestamp)) {
           o.remainTime = 'end';
           o.balance = 0;
@@ -359,6 +359,16 @@ class App extends React.Component {
       return h + '小时' + m + '分钟';
     }
     return m + '分钟';
+  }
+
+  balance(endTimestamp, price) {
+    const remainHour = Math.abs(differenceInMinutes(endTimestamp, Date.now())) / 60;
+    let balance = (Number((remainHour * price).toFixed(1)) * 10  - 10) / 10;
+    let decimal = (balance + "").split(".")[1];
+    let integer =  (balance + "").split(".")[0];
+    decimal = decimal >= 5 ? 5 : 0;
+    balance = Number(integer) + Number(decimal) * 0.1;
+    return balance <= 0 ? 0 : balance;
   }
 
 }
