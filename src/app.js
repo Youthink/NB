@@ -3,7 +3,7 @@ import ReactDOM             from 'react-dom';
 import low                  from 'lowdb';
 import LocalStorage         from 'lowdb/adapters/LocalStorage';
 import format               from 'date-fns/format';
-import addHours             from 'date-fns/add_hours';
+import addMinutes           from 'date-fns/add_minutes';
 import zh                   from 'date-fns/locale/zh_cn';
 import isPast               from 'date-fns/is_past';
 import differenceInMinutes  from 'date-fns/difference_in_minutes';
@@ -255,7 +255,7 @@ class App extends React.Component {
     const oldAmount = db.get(`records[${updateItem}].amount`).value();
     const balance = db.get(`records[${updateItem}].balance`).value() +  Number(updateAmount);
     const amount = Number(oldAmount) + Number(updateAmount);
-    const endTime = addHours(oldStartTime, Number((amount / settings.price).toFixed(1)));
+    const endTime = addMinutes(oldStartTime, Number((amount * 60) / settings.price));
     db.get('records').find({computerNum: updateComputerNum}).assign({
       amount: amount,
       endTime: format(endTime,'MMMD[日] HH:mm',{locale: zh}),
@@ -274,7 +274,7 @@ class App extends React.Component {
     }
     const {newComputerNumValue, newAmountValue, settings} = this.state;
     const now = Date.now();
-    const endTime = addHours(now, Number((newAmountValue / settings.price).toFixed(1)));
+    const endTime = addMinutes(now, Number((newAmountValue * 60) / settings.price));
     db.get('records').push({
       computerNum: newComputerNumValue,
       amount: Number(newAmountValue),
@@ -364,10 +364,12 @@ class App extends React.Component {
   balance(endTimestamp, price) {
     const remainHour = Math.abs(differenceInMinutes(endTimestamp, Date.now())) / 60;
     let balance = (Number((remainHour * price).toFixed(1)) * 10  - 10) / 10;
-    let decimal = (balance + "").split(".")[1];
-    let integer =  (balance + "").split(".")[0];
-    decimal = decimal >= 5 ? 5 : 0;
-    balance = Number(integer) + Number(decimal) * 0.1;
+    console.log(balance);
+    const decimal = Number((balance + "").split(".")[1]);
+    let integer = Number((balance + "").split(".")[0]);
+    const newDecimal = decimal > 5 ? 0 : 5;
+    integer = decimal > 5 ? (integer + 1) : integer;
+    balance = integer + newDecimal * 0.1;
     return balance <= 0 ? 0 : balance;
   }
 
