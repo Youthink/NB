@@ -6,6 +6,7 @@ import format               from 'date-fns/format';
 import addMinutes           from 'date-fns/add_minutes';
 import zh                   from 'date-fns/locale/zh_cn';
 import isPast               from 'date-fns/is_past';
+import getTime              from 'date-fns/get_time';
 import differenceInMinutes  from 'date-fns/difference_in_minutes';
 import interval             from 'request-interval';
 
@@ -255,7 +256,7 @@ class App extends React.Component {
     const oldAmount = db.get(`records[${updateItem}].amount`).value();
     const balance = db.get(`records[${updateItem}].balance`).value() +  Number(updateAmount);
     const amount = Number(oldAmount) + Number(updateAmount);
-    const endTime = addMinutes(oldStartTime, Number((amount * 60) / settings.price));
+    const endTime = getTime(format(addMinutes(oldStartTime, Number((amount * 60) / settings.price)), 'YYYY-MM-DDTHH:mm'));
     db.get('records').find({computerNum: updateComputerNum}).assign({
       amount: amount,
       endTime: format(endTime,'MMMD[日] HH:mm',{locale: zh}),
@@ -274,7 +275,8 @@ class App extends React.Component {
     }
     const {newComputerNumValue, newAmountValue, settings} = this.state;
     const now = Date.now();
-    const endTime = addMinutes(now, Number((newAmountValue * 60) / settings.price));
+    const endTime = getTime(format(addMinutes(now, Number((newAmountValue * 60) / settings.price)), 'YYYY-MM-DDTHH:mm'));
+    console.log(endTime);
     db.get('records').push({
       computerNum: newComputerNumValue,
       amount: Number(newAmountValue),
