@@ -262,7 +262,7 @@ class App extends React.Component {
       endTime: format(endTime,'MMMD[日] HH:mm',{locale: zh}),
       endTimestamp: endTime,
       remainTime: isPast(endTime) ? 'end' :  this.remainTime(endTime),
-      balance: this.balance(endTime, settings.price)
+      balance: this.balance(amount, oldStartTime, settings.price)
     }).write();
     this.fetchData();
     $('.update-record').modal('hide');
@@ -276,17 +276,17 @@ class App extends React.Component {
     const {newComputerNumValue, newAmountValue, settings} = this.state;
     const now = Date.now();
     const endTime = getTime(format(addMinutes(now, Number((newAmountValue * 60) / settings.price)), 'YYYY-MM-DDTHH:mm'));
-    console.log(endTime);
+    const amount =  Number(newAmountValue);
     db.get('records').push({
       computerNum: newComputerNumValue,
-      amount: Number(newAmountValue),
+      amount: amount,
       price: Number(settings.price),
       startTime: format(now,'MMMD[日] HH:mm',{locale: zh}),
       endTime: format(endTime,'MMMD[日] HH:mm',{locale: zh}),
       endTimestamp: endTime,
       startTimestamp: now,
       remainTime: isPast(endTime) ? 'end' :  this.remainTime(endTime),
-      balance: this.balance(endTime, settings.price)
+      balance: this.balance(amount, now, settings.price)
     }).write();
     this.fetchData();
     this.setState({newComputerNumValue: '', newAmountValue: ''});
@@ -338,7 +338,7 @@ class App extends React.Component {
       const price = settings.price;
       records = records.map(o => {
         o.remainTime = this.remainTime(o.endTimestamp);
-        o.balance = this.balance(o.endTimestamp, price);
+        o.balance = this.balance(o.amount, o.startTimestamp, price);
         if (isPast(o.endTimestamp)) {
           o.remainTime = 'end';
           o.balance = 0;
@@ -363,14 +363,18 @@ class App extends React.Component {
     return m + '分钟';
   }
 
-  balance(endTimestamp, price) {
-    const remainHour = Math.abs(differenceInMinutes(endTimestamp, Date.now())) / 60;
-    let balance = (Number((remainHour * price).toFixed(1)) * 10  - 10) / 10;
-    console.log(balance);
+  balance(amount, startTimestamp, price) {
+    let balance;
+    const pricePerHour = 60 / price;
+    const expendMinutes = Math.abs(Number(differenceInMinutes(Date.now(), startTimestamp)));
+    if (expendMinutes <= pricePerHour) {
+      balance = amount - 1;
+      return balance;
+    }
+    balance = (amount * 10 - (Number(((expendMinutes / 60)  * price).toFixed(1)) * 10)) / 10;
     const decimal = Number((balance + "").split(".")[1]);
     let integer = Number((balance + "").split(".")[0]);
-    const newDecimal = decimal > 5 ? 0 : 5;
-    integer = decimal > 5 ? (integer + 1) : integer;
+    const newDecimal = decimal > 5 ? 5 : 0;
     balance = integer + newDecimal * 0.1;
     return balance <= 0 ? 0 : balance;
   }
