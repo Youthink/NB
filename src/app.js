@@ -334,11 +334,9 @@ class App extends React.Component {
   monitorRecords() {
     const interv = () => {
       let {records} = db.getState();
-      const {settings} = db.getState();
-      const price = settings.price;
       records = records.map(o => {
         o.remainTime = this.remainTime(o.endTimestamp);
-        o.balance = this.balance(o.amount, o.startTimestamp, price);
+        o.balance = this.balance(o.amount, o.startTimestamp, o.price);
         if (isPast(o.endTimestamp)) {
           o.remainTime = 'end';
           o.balance = 0;
@@ -350,13 +348,13 @@ class App extends React.Component {
       this.setState({records});
     }
     interv();
-    this.monitor = interval(60000, interv);
+    this.monitor = interval(6000, interv);
   }
 
   remainTime(endTimestamp) {
     const minutes = differenceInMinutes(endTimestamp, Date.now());
     const h = Math.floor(minutes / 60);
-    const m = minutes - h * 60;
+    const m = minutes - h * 60 + 1;
     if (h > 0) {
       return h + '小时' + m + '分钟';
     }
