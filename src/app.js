@@ -179,6 +179,7 @@ function onChange(pagination, filters, sorter) {
             columns={columns}
             dataSource={records}
             onChange={onChange}
+            locale={{emptyText: '暂无数据' }}
             rowClassName={record => record.remainTime === 'end' && 'table-tr-end'}
           />
         </section>
