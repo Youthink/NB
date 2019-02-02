@@ -20,7 +20,13 @@ entry: './src/app.js',
             options: {
               babelrc: false,
               presets: ['env', 'react'],
-              plugins: ['transform-function-bind']
+              plugins: [
+                'transform-function-bind',
+                ['import', {
+                  'libraryName': 'antd',
+                  'style': true
+                }]
+              ]
             }
           }
         ]
