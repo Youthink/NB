@@ -1,14 +1,19 @@
-import React                from 'react';
-import ReactDOM             from 'react-dom';
-import low                  from 'lowdb';
-import LocalStorage         from 'lowdb/adapters/LocalStorage';
-import format               from 'date-fns/format';
-import addMinutes           from 'date-fns/add_minutes';
-import zh                   from 'date-fns/locale/zh_cn';
-import isPast               from 'date-fns/is_past';
-import getTime              from 'date-fns/get_time';
-import differenceInMinutes  from 'date-fns/difference_in_minutes';
-import interval             from 'request-interval';
+import React               from 'react';
+import ReactDOM            from 'react-dom';
+import low                 from 'lowdb';
+import LocalStorage        from 'lowdb/adapters/LocalStorage';
+import format              from 'date-fns/format';
+import addMinutes          from 'date-fns/add_minutes';
+import zh                  from 'date-fns/locale/zh_cn';
+import isPast              from 'date-fns/is_past';
+import getTime             from 'date-fns/get_time';
+import differenceInMinutes from 'date-fns/difference_in_minutes';
+import interval            from 'request-interval';
+import {
+  Table,
+  Button,
+  Icon
+} from 'antd';
 
 import 'semantic-ui-css/semantic.min.js';
 
@@ -44,6 +49,104 @@ class App extends React.Component {
 
   render() {
     const {records, settings, remind} = this.state;
+    const columns = [
+      {
+        title: '机器编号',
+        dataIndex: 'computerNum',
+        width: 110,
+        align: 'center',
+        sorter: (a, b) => a.computerNum - b.computerNum,
+        sortDirections: ['descend', 'ascend'],
+      }, {
+        title: '上机时间',
+        dataIndex: 'startTime',
+        width: 120,
+        align: 'center',
+        defaultSortOrder: 'descend',
+        sorter: (a, b) => a.startTime - b.startTime,
+      }, {
+        title: '下机时间',
+        dataIndex: 'endTime',
+        width: 120,
+        align: 'center',
+        sorter: (a, b) => a.endTime - b.endTime,
+        sortDirections: ['descend', 'ascend'],
+      }, {
+        title: '充值',
+        dataIndex: 'amount',
+        width: 80,
+        align: 'center',
+        render: amount => amount + '元',
+        sorter: (a, b) => a.amount - b.amount,
+        sortDirections: ['descend', 'ascend']
+      }, {
+        title: '剩余时间',
+        dataIndex: 'remainTime',
+        width: 120,
+        align: 'center',
+        render: remainTime => remainTime === 'end' ? '已到下机时间' : remainTime,
+        sorter: (a, b) => a.endTime - b.endTime,
+        sortDirections: ['descend', 'ascend']
+      }, {
+        title: '余额',
+        dataIndex: 'balance',
+        width: 80,
+        align: 'center',
+        render: balance => balance + '元',
+        sorter: (a, b) => a.endTime - b.endTime,
+        sortDirections: ['descend', 'ascend']
+      }, {
+        title: '单价',
+        dataIndex: 'price',
+        width: 90,
+        align: 'center',
+        render: amount => amount + '元/小时'
+      }, {
+        title: '操作',
+        align: 'center',
+        render: (text, record, index) => (
+          <React.Fragment>
+            <Button
+              type="primary"
+              icon="edit"
+              size="small"
+              onClick={() => {
+                $('.update-record')
+                .modal('show');
+                this.setState({
+                  updateComputerNum: record.computerNum,
+                  currentAmount: record.amount,
+                  updateItem: index
+                });
+              }}
+            >
+              更新
+            </Button>
+            <Button
+              type="danger"
+              icon="delete"
+              size="small"
+              onClick={() => {
+                $('.delete-record')
+                .modal({
+                  onApprove : () => {
+                    db.get('records').remove({computerNum: record.computerNum}).write();
+                    this.fetchData();
+                  }
+                })
+                .modal('show');
+              }}
+            >
+             删除
+            </Button>
+          </React.Fragment>
+        )
+      }
+    ];
+
+function onChange(pagination, filters, sorter) {
+  console.log('params', pagination, filters, sorter);
+}
     return(
       <section className="home">
         <div className="ui fixed blue inverted menu">
@@ -51,7 +154,7 @@ class App extends React.Component {
             汲爽网咖计时系统
           </a>
           <div className="right menu">
-            <a className="item" onClick={::this.renderAddPopup}>
+            <a className="item" onClick={this.renderAddPopup}>
               <i className="plus icon"></i>
               上机
             </a>
@@ -70,70 +173,20 @@ class App extends React.Component {
               {records.length}
             </a>
           </div>
-          <table className="ui celled blue table">
-            <thead>
-              <tr>
-                <th>机器编号</th>
-                <th>上机时间</th>
-                <th>下机时间</th>
-                <th>充值金额</th>
-                <th>单价</th>
-                <th>剩余时间</th>
-                <th>剩余金额</th>
-                <th>操作</th>
-              </tr>
-            </thead>
-            <tbody>
-              {records.map((o, i) => {
-                return(
-                  <tr className={o.remainTime === 'end' ? 'negative' : ''} key={i}>
-                    <td>{o.computerNum}</td>
-                    <td>{o.startTime}</td>
-                    <td>{o.endTime}</td>
-                    <td>{o.amount}元</td>
-                    <td>{o.price}元/小时</td>
-                    <td>{o.remainTime === 'end' ? '已到下机时间' : o.remainTime}</td>
-                    <td>{o.balance}元</td>
-                    <td>
-                      <button className="ui mini red labeled icon button"
-                        onClick={() => {
-                          $('.update-record')
-                          .modal('show');
-                          this.setState({
-                            updateComputerNum: o.computerNum,
-                            currentAmount: o.amount,
-                            updateItem: i
-                          });
-                        }}
-                      >
-                        <i className="write icon"></i>更新
-                      </button>
-                      <button className="ui mini blue labeled icon button"
-                        onClick={() => {
-                        $('.delete-record')
-                        .modal({
-                          onApprove : () => {
-                            db.get('records').remove({computerNum: o.computerNum}).write();
-                            this.fetchData();
-                          }
-                        })
-                        .modal('show');
-                        }}
-                      >
-                        <i className="remove icon"></i>删除
-                      </button>
-                    </td>
-                 </tr>
-                );
-              })}
-            </tbody>
-          </table>
+          <Table
+            bordered
+            pagination={false}
+            columns={columns}
+            dataSource={records}
+            onChange={onChange}
+            rowClassName={record => record.remainTime === 'end' && 'table-tr-end'}
+          />
         </section>
         <div className="ui tiny modal add-record">
           <i className="close icon"></i>
           <div className="ui center aligned grid header">添加上机记录</div>
           <div className="content">
-            <form className="ui form error" onSubmit={::this.submitAddRecordFrom}>
+            <form className="ui form error" onSubmit={this.submitAddRecordFrom}>
               <div className="field">
                 <label>机器编号</label>
                 <input type="number" placeholder="填写机器编号" min="0"
@@ -164,7 +217,7 @@ class App extends React.Component {
           <i className="close icon"></i>
           <div className="ui center aligned grid header">更新上机记录</div>
           <div className="content">
-            <form className="ui form error" onSubmit={::this.submitUpdateRecordFrom}>
+            <form className="ui form error" onSubmit={this.submitUpdateRecordFrom}>
               <div className="field">
                 <label>机器编号</label>
                 <div className="ui segment">
@@ -194,7 +247,7 @@ class App extends React.Component {
           <i className="close icon"></i>
           <div className="ui center aligned grid header">设置</div>
           <div className="content">
-            <form className="ui form" onSubmit={::this.submitSettings}>
+            <form className="ui form" onSubmit={this.submitSettings}>
               <div className="field">
                 <label>上机每小时价格</label>
                 <div className="ui right labeled input">
@@ -241,7 +294,7 @@ class App extends React.Component {
     requestTimeout.clear(this.rt);
   }
 
-  renderAddPopup() {
+  renderAddPopup = () => {
     $('.add-record').modal('show');
   }
 
@@ -249,7 +302,7 @@ class App extends React.Component {
     $('.setting').modal('show');
   }
 
-  submitUpdateRecordFrom(event) {
+  submitUpdateRecordFrom = async (event) => {
     event.preventDefault();
     const {updateComputerNum, updateAmount, settings, updateItem} = this.state;
     const oldStartTime = db.get(`records[${updateItem}].startTimestamp`).value();
@@ -257,7 +310,7 @@ class App extends React.Component {
     const balance = db.get(`records[${updateItem}].balance`).value() +  Number(updateAmount);
     const amount = Number(oldAmount) + Number(updateAmount);
     const endTime = getTime(format(addMinutes(oldStartTime, Number((amount * 60) / settings.price)), 'YYYY-MM-DDTHH:mm'));
-    db.get('records').find({computerNum: updateComputerNum}).assign({
+    await db.get('records').find({computerNum: updateComputerNum}).assign({
       amount: amount,
       endTime: format(endTime,'MMMD[日] HH:mm',{locale: zh}),
       endTimestamp: endTime,
@@ -268,7 +321,7 @@ class App extends React.Component {
     $('.update-record').modal('hide');
   }
 
-  submitAddRecordFrom(event) {
+  submitAddRecordFrom = (event) => {
     event.preventDefault();
     if (!this.verify()) {
       return;
@@ -311,7 +364,7 @@ class App extends React.Component {
     return true;
   }
 
-  submitSettings(event) {
+  submitSettings = (event) => {
     event.preventDefault();
     const price = Number(this.state.settings.price);
     db.get('settings').assign({price}).write();
