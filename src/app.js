@@ -370,9 +370,8 @@ class App extends React.Component {
       return balance;
     }
     balance = (amount * 10 - (Number(((expendMinutes / 60)  * price).toFixed(1)) * 10)) / 10;
-    const decimal = Number((balance + "").split(".")[1]);
     let integer = Number((balance + "").split(".")[0]);
-    const newDecimal = decimal > 5 ? 5 : 0;
+    const newDecimal = 0;
     balance = integer + newDecimal * 0.1;
     return balance <= 0 ? 0 : balance;
   }
