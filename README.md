@@ -15,26 +15,35 @@
 首次安装依赖
 ```
 ELECTRON_MIRROR=https://npm.taobao.org/mirrors/electron npm install
+
+or
+
+ELECTRON_MIRROR=https://npm.taobao.org/mirrors/electron yarn install
 ```
 
 安装依赖
 ```
 npm install
+
+or
+
+yarn install
 ```
 
-webpack 打包监听文件改动
+开发
 ```
-npm run build
+npm dev
+
+or
+
+yarn dev
 ```
 
 启动应用
 ```
 npm start
+
+or
+
+yarn start
 ```
-
-
-## TODO
-
-1、下机后的时间提醒
-
-2、代码重构。现在，太烂惨不忍睹。

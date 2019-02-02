@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "electron .",
-    "build": "webpack --watch",
+    "dev": "webpack --watch",
     "package-mac": "electron-packager . 网咖计时系统 --overwrite --platform=darwin --arch=x64 --prune=true --out=release-builds --icon=./src/images/icon.icns",
     "package-win": "electron-packager . 网咖计时系统 --overwrite --asar=true --platform=win32 --arch=ia32 --prune=true --out=release-builds --icon=./src/images/icon.icon"
   },
