@@ -63,13 +63,13 @@ class App extends React.Component {
         width: 120,
         align: 'center',
         defaultSortOrder: 'descend',
-        sorter: (a, b) => a.startTime - b.startTime,
+        sorter: (a, b) => a.startTimestamp - b.startTimestamp,
       }, {
         title: '下机时间',
         dataIndex: 'endTime',
         width: 120,
         align: 'center',
-        sorter: (a, b) => a.endTime - b.endTime,
+        sorter: (a, b) => a.endTimestamp - b.endTimestamp,
         sortDirections: ['descend', 'ascend'],
       }, {
         title: '充值',
@@ -93,7 +93,7 @@ class App extends React.Component {
         width: 80,
         align: 'center',
         render: balance => balance + '元',
-        sorter: (a, b) => a.endTime - b.endTime,
+        sorter: (a, b) => a.balance - b.balance,
         sortDirections: ['descend', 'ascend']
       }, {
         title: '单价',
@@ -302,7 +302,7 @@ function onChange(pagination, filters, sorter) {
     $('.setting').modal('show');
   }
 
-  submitUpdateRecordFrom = async (event) => {
+  submitUpdateRecordFrom = (event) => {
     event.preventDefault();
     const {updateComputerNum, updateAmount, settings, updateItem} = this.state;
     const oldStartTime = db.get(`records[${updateItem}].startTimestamp`).value();
@@ -310,7 +310,7 @@ function onChange(pagination, filters, sorter) {
     const balance = db.get(`records[${updateItem}].balance`).value() +  Number(updateAmount);
     const amount = Number(oldAmount) + Number(updateAmount);
     const endTime = getTime(format(addMinutes(oldStartTime, Number((amount * 60) / settings.price)), 'YYYY-MM-DDTHH:mm'));
-    await db.get('records').find({computerNum: updateComputerNum}).assign({
+    db.get('records').find({computerNum: updateComputerNum}).assign({
       amount: amount,
       endTime: format(endTime,'MMMD[日] HH:mm',{locale: zh}),
       endTimestamp: endTime,
