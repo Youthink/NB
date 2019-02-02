@@ -19,9 +19,15 @@ entry: './src/app.js',
             loader: 'babel-loader',
             options: {
               babelrc: false,
-              presets: ['env', 'react'],
+              presets: ['@babel/env', '@babel/react'],
               plugins: [
-                'transform-function-bind',
+                '@babel/plugin-proposal-class-properties',
+                [
+                  '@babel/plugin-transform-runtime',
+                  {
+                    'regenerator': true
+                  }
+                ],
                 ['import', {
                   'libraryName': 'antd',
                   'style': true
@@ -43,7 +49,7 @@ entry: './src/app.js',
         use: [
           'style-loader',
           'css-loader',
-          'less-loader'
+          { loader: 'less-loader', options: {javascriptEnabled: true}}
         ]
       },
       {
